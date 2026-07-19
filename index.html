@@ -109,6 +109,12 @@
 
   .exrow{display:flex;justify-content:space-between;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line)}
   .exrow:last-child{border-bottom:none}
+  @keyframes flashrow{0%{background:rgba(255,107,44,.4)}100%{background:transparent}}
+  .flash{animation:flashrow 1.6s ease-out;border-radius:8px}
+  .traybar{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));z-index:35;
+    background:rgba(19,17,16,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    border-top:1px solid var(--hot)}
+  .traybar .tb-in{max-width:520px;margin:0 auto;padding:9px 14px;display:flex;align-items:center;gap:9px}
   input[type=range]{padding:0;height:34px;accent-color:var(--ember);background:none;border:none}
   .slider-val{font-family:var(--disp);font-weight:700;font-size:18px;width:34px;text-align:right}
   svg.chart{display:block;width:100%;height:auto}
@@ -319,7 +325,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.5.0";
+const VERSION="0.5.1";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -1054,6 +1060,15 @@ vFood(){
     </div>
   </div>
 
+  <div class="spread" style="margin-top:14px"><span class="eyebrow">Today's log</span>
+    ${l.meals.length?`<span class="small faint">${l.meals.length} ${l.meals.length===1?"entry":"entries"}</span>`:""}</div>
+  ${l.meals.length?l.meals.map((m,i)=>`<div class="exrow ${m.ts&&m.ts===this.flashTs?"flash":""}">
+      <div style="min-width:0"><div>${esc(m.name)}</div>
+        <div class="small faint">${m.time||""}${m.plants?" · "+m.plants+" plants":""}${m.fish?" · fish":""}${m.dcal?" · drink":""}</div></div>
+      <div class="row" style="flex:none"><span class="muted small num">${m.p}p · ${m.cal} cal</span>
+      <button class="chip" onclick="app.delFood(${i})">✕</button></div></div>`).join("")
+   :`<div class="small faint" style="margin-top:8px">Nothing logged${isToday?" yet — everything you add lands right here":""}.</div>`}
+
   ${this._recent.length?`<div class="eyebrow" style="margin-top:14px">Repeat — one tap</div>
   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:7px">
     ${this._recent.map((r,i)=>`<button class="chip ${r.kind==="plate"?"on":""}" onclick="app.logRecent(${i})">${r.kind==="plate"?"★ ":""}${esc(r.label)} <span class="faint">${r.p}p</span></button>`).join("")}
@@ -1062,8 +1077,7 @@ vFood(){
   <button class="btn" style="margin-top:14px" onclick="app.openPlate()">+ BUILD A PLATE</button>
 
   <div class="spread" style="margin-top:16px"><span class="eyebrow">Quick add</span>
-    <span class="small faint">tap it all, then log once</span></div>
-  ${this.vTray()}
+    <span class="small faint">tap it all, then LOG once</span></div>
   <input id="foodSearch" placeholder="Search foods — choc, nuts, coco…" value="${esc(this.q||"")}"
     oninput="app.foodFilter(this.value)" style="margin-top:8px">
   <div id="qaGroups">
@@ -1078,13 +1092,6 @@ vFood(){
     </div></div>`;}).join("")}
   </div>
 
-  <div class="eyebrow" style="margin-top:16px">Logged</div>
-  ${l.meals.length?l.meals.map((m,i)=>`<div class="exrow"><div>${esc(m.name)}
-      <div class="small faint">${m.time||""}${m.plants?" · "+m.plants+" plants":""}${m.fish?" · fish":""}</div></div>
-    <div class="row"><span class="muted small num">${m.p}p · ${m.cal} cal</span>
-    <button class="chip" onclick="app.delFood(${i})">✕</button></div></div>`).join("")
-   :`<div class="small faint" style="margin-top:8px">Nothing logged${isToday?" yet":""}.</div>`}
-
   <hr class="divline">
   <div class="eyebrow">Supplements</div>
   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:7px">
@@ -1095,14 +1102,23 @@ vFood(){
   <div class="eyebrow" style="margin-top:14px">Mind</div>
   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:7px">
     ${MIND.map((s,i)=>`<button class="chip ${(l.mind||[]).includes(s)?"on":""}" onclick="app.toggleMind(${i})">${esc(s)}</button>`).join("")}
-  </div>`;
+  </div>
+  ${this.vTray()}`;
 },
 foodNav(d){ this.trayFlush(); const [y,m,dd]=this.foodDate.split("-").map(Number); const dt=new Date(y,m-1,dd+d);
   const nd=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");
   if(nd>today())return; this.foodDate=nd; this.render(); },
 logEntry(e){ e.time=e.time||new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
   e.ts=e.ts||Date.now();
-  dayLog(this.foodDate).meals.push(e); save(); this.closeSheet(); this.render();
+  dayLog(this.foodDate).meals.push(e); save(); this.closeSheet();
+  // close the loop: show the entry landing in Today's log — scroll to it + flash
+  this.flashTs=e.ts; setTimeout(()=>{this.flashTs=null;},1600);
+  this.render();
+  const row=document.querySelector(".flash");
+  if(row){ row.scrollIntoView({behavior:"smooth",block:"center"});
+    // some engines silently drop smooth scrolls — if we didn't arrive, jump
+    setTimeout(()=>{ const b=row.getBoundingClientRect();
+      if(b.top<0||b.bottom>innerHeight) row.scrollIntoView({block:"center"}); },450); }
   toast(e.name+" — "+e.p+"g protein"); },
 delFood(i){ dayLog(this.foodDate).meals.splice(i,1); save(); this.render(); },
 addPlant(d){ const l=dayLog(this.foodDate); l.plantsExtra=Math.max(0,(l.plantsExtra||0)+d);
@@ -1162,19 +1178,20 @@ trayTotals(){ return this.trayItems().reduce((a,it)=>{const e=compEntry(it);
 trayRemove(idx){ const it=this.trayItems()[idx]; if(!it)return;
   this.tray[it.name].qty--; if(this.tray[it.name].qty<=0) delete this.tray[it.name]; this.render(); },
 trayClear(){ this.tray={}; this.render(); },
+/* sticky bar pinned above the tab bar — always visible while tapping chips */
 vTray(){ const items=this.trayItems(); if(!items.length) return "";
   const T=this.trayTotals();
-  return `<div class="card" style="border-color:var(--hot);margin-top:8px">
-    <div class="spread"><span class="eyebrow" style="color:var(--hot)">On deck — tap a chip to remove one</span>
-      <span class="num small">${T.p}p · ${T.cal} cal</span></div>
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:8px">
+  return `<div style="height:96px"></div><div class="traybar"><div class="tb-in">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0">
+      <span class="eyebrow" style="font-size:10px;color:var(--hot);width:100%">On deck · ${T.p}p · ${T.cal} cal — tap a chip to remove</span>
       ${items.map((it,idx)=>{const f=compFind(it.name)||{};
         return `<button class="chip on" onclick="app.trayRemove(${idx})">${esc(it.name)}${it.qty>1?" ×"+it.qty:""}${f.sizes&&it.size!=="M"?" ("+it.size+")":""} −</button>`;}).join("")}
     </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn sm" style="flex:1" onclick="app.trayLog()">LOG ${items.length>1?"ALL "+items.length:"IT"}</button>
-      <button class="chip" style="flex:none" onclick="app.trayClear()">clear</button>
-    </div></div>`; },
+    <div style="flex:none;display:flex;flex-direction:column;gap:5px;align-items:stretch">
+      <button class="btn sm" style="width:auto;padding:10px 18px" onclick="app.trayLog()">LOG</button>
+      <button class="chip" style="text-align:center" onclick="app.trayClear()">clear</button>
+    </div>
+  </div></div>`; },
 trayLog(){ const items=this.trayItems(); if(!items.length)return;
   const T=this.trayTotals();
   const parts=items.map(it=>{const f=compFind(it.name)||{};

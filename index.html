@@ -325,7 +325,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.5.1";
+const VERSION="0.5.2";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -351,6 +351,13 @@ function migrate(){
   // v0.5: "Walnuts / Nuts" renamed — keep saved plates pointing at the library
   for(const m of S.meals) for(const it of (m.items||[])) if(it.name==="Walnuts / Nuts") it.name="Raw Nuts / Mix";
   seedWeek();
+  // Jul 19 snack lost in the hosting move, reseeded from his own report —
+  // only onto a still-empty day so a manual re-log never gets doubled
+  if(!S.meta.seedSnack1907){ S.meta.seedSnack1907=1;
+    const l=S.log["2026-07-19"]=S.log["2026-07-19"]||{meals:[],water:0,supps:[]};
+    if(!l.meals.length) l.meals.push({name:"2 Dark Chocolate + Raw Nuts / Mix + Coconut Water",
+      p:7,c:29,f:25,cal:365,plants:0,fish:0,dcal:55,time:"earlier today",ts:Date.now()});
+  }
 }
 function isTrainDay(dow){ return (S.profile.trainDays||[2,3,4]).includes(dow); }
 /* Storage is belt-and-suspenders after the week the artifact sandbox ate:

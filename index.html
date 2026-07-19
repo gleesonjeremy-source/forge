@@ -325,7 +325,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.5.2";
+const VERSION="0.5.3";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -1069,12 +1069,16 @@ vFood(){
 
   <div class="spread" style="margin-top:14px"><span class="eyebrow">Today's log</span>
     ${l.meals.length?`<span class="small faint">${l.meals.length} ${l.meals.length===1?"entry":"entries"}</span>`:""}</div>
-  ${l.meals.length?l.meals.map((m,i)=>`<div class="exrow ${m.ts&&m.ts===this.flashTs?"flash":""}">
+  ${l.meals.map((m,i)=>`<div class="exrow ${m.ts&&m.ts===this.flashTs?"flash":""}">
       <div style="min-width:0"><div>${esc(m.name)}</div>
         <div class="small faint">${m.time||""}${m.plants?" · "+m.plants+" plants":""}${m.fish?" · fish":""}${m.dcal?" · drink":""}</div></div>
       <div class="row" style="flex:none"><span class="muted small num">${m.p}p · ${m.cal} cal</span>
-      <button class="chip" onclick="app.delFood(${i})">✕</button></div></div>`).join("")
-   :`<div class="small faint" style="margin-top:8px">Nothing logged${isToday?" yet — everything you add lands right here":""}.</div>`}
+      <button class="chip" onclick="app.delFood(${i})">✕</button></div></div>`).join("")}
+  ${(l.supps||[]).length?`<div class="exrow"><div style="min-width:0">
+      <div>Supplements <span class="small faint">${l.supps.length} of ${allSupps().length}</span></div>
+      <div class="small faint">${l.supps.map(esc).join(" · ")}</div></div>
+      <span class="num muted" style="flex:none;color:var(--good)">✓</span></div>`:""}
+  ${l.meals.length||(l.supps||[]).length?"":`<div class="small faint" style="margin-top:8px">Nothing logged${isToday?" yet — everything you add lands right here":""}.</div>`}
 
   ${this._recent.length?`<div class="eyebrow" style="margin-top:14px">Repeat — one tap</div>
   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:7px">
@@ -1266,7 +1270,10 @@ logPlate(saveIt){
 },
 water(oz){ const l=dayLog(this.foodDate); l.water=Math.max(0,(l.water||0)+oz); save(); this.render(); },
 toggleSupp(idx){ const s=allSupps()[idx]; if(!s)return; const l=dayLog(this.foodDate); l.supps=l.supps||[];
-  const i=l.supps.indexOf(s); if(i<0)l.supps.push(s); else l.supps.splice(i,1); save(); this.render(); },
+  const i=l.supps.indexOf(s);
+  if(i<0){ l.supps.push(s); toast(s+" ✓ — in today's log"); }
+  else { l.supps.splice(i,1); toast(s+" removed"); }
+  save(); this.render(); },
 addSupp(){ const n=(prompt("Supplement name:")||"").trim(); if(!n)return;
   if(allSupps().some(s=>s.toLowerCase()===n.toLowerCase())){toast(n+" is already a chip");return;}
   S.suppsCustom.push(n); save(); this.render(); toast(n+" added — tap it to log"); },

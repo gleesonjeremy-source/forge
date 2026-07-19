@@ -271,6 +271,136 @@ const COMPONENTS=[
  {name:"Dark Chocolate",unit:"square",cat:"treat",p:1,c:5,f:4,cal:60},
  {name:"Honey",sizes:1,cat:"treat",p:0,c:17,f:0,cal:64,anchor:"M = 1 tbsp drizzle"}
 ];
+/* FOOD_DB: the deep library. Not rendered as chips (COMPONENTS = his staples,
+   the chips stay his); these surface through search and resolve everywhere a
+   chip would — tray, plates, repeats. Same shape as COMPONENTS. Offline, no
+   lookups: cherries are cherries, not "a plant". */
+const FOOD_DB=[
+ // fruit
+ {name:"Cherries",sizes:1,plant:1,cat:"plant",p:1,c:24,f:0,cal:95,anchor:"M = fist ≈ 1 cup"},
+ {name:"Apple",unit:"apple",plant:1,cat:"plant",p:0,c:25,f:0,cal:95},
+ {name:"Banana",unit:"banana",plant:1,cat:"plant",p:1,c:27,f:0,cal:105},
+ {name:"Orange",unit:"orange",plant:1,cat:"plant",p:1,c:15,f:0,cal:62},
+ {name:"Clementine",unit:"clementine",plant:1,cat:"plant",p:1,c:9,f:0,cal:35},
+ {name:"Peach",unit:"peach",plant:1,cat:"plant",p:1,c:15,f:0,cal:60},
+ {name:"Pear",unit:"pear",plant:1,cat:"plant",p:1,c:27,f:0,cal:100},
+ {name:"Kiwi",unit:"kiwi",plant:1,cat:"plant",p:1,c:10,f:0,cal:42},
+ {name:"Grapes",sizes:1,plant:1,cat:"plant",p:1,c:27,f:0,cal:104,anchor:"M = fist ≈ 1 cup"},
+ {name:"Strawberries",sizes:1,plant:1,cat:"plant",p:1,c:12,f:0,cal:49,anchor:"M = fist ≈ 1 cup"},
+ {name:"Blueberries",sizes:1,plant:1,cat:"plant",p:1,c:21,f:0,cal:84,anchor:"M = fist ≈ 1 cup"},
+ {name:"Raspberries",sizes:1,plant:1,cat:"plant",p:1,c:15,f:1,cal:64,anchor:"M = fist ≈ 1 cup"},
+ {name:"Watermelon",sizes:1,plant:1,cat:"plant",p:1,c:11,f:0,cal:46,anchor:"M = fist ≈ 1 cup"},
+ {name:"Pineapple",sizes:1,plant:1,cat:"plant",p:1,c:22,f:0,cal:82,anchor:"M = fist ≈ 1 cup"},
+ {name:"Mango",sizes:1,plant:1,cat:"plant",p:1,c:25,f:0,cal:99,anchor:"M = fist ≈ 1 cup"},
+ {name:"Cantaloupe / Melon",sizes:1,plant:1,cat:"plant",p:1,c:13,f:0,cal:53,anchor:"M = fist ≈ 1 cup"},
+ {name:"Grapefruit",sizes:1,plant:1,cat:"plant",p:1,c:13,f:0,cal:52,anchor:"M = half"},
+ {name:"Pomegranate Seeds",sizes:1,plant:1,cat:"plant",p:3,c:33,f:2,cal:144,anchor:"M = 1 cup"},
+ {name:"Medjool Date",unit:"date",plant:1,cat:"plant",p:0,c:18,f:0,cal:66},
+ // veg
+ {name:"Carrots",sizes:1,plant:1,cat:"plant",p:1,c:12,f:0,cal:52,anchor:"M = 1 cup"},
+ {name:"Cucumber",sizes:1,plant:1,cat:"plant",p:1,c:4,f:0,cal:16,anchor:"M = 1 cup"},
+ {name:"Tomato",unit:"tomato",plant:1,cat:"plant",p:1,c:5,f:0,cal:22},
+ {name:"Bell Pepper",unit:"pepper",plant:1,cat:"plant",p:1,c:7,f:0,cal:31},
+ {name:"Spinach",sizes:1,plant:1,cat:"plant",p:5,c:7,f:0,cal:41,anchor:"M = cooked cup / big raw bowl"},
+ {name:"Kale",sizes:1,plant:1,cat:"plant",p:2,c:7,f:1,cal:36,anchor:"M = cooked cup"},
+ {name:"Asparagus",sizes:1,plant:1,cat:"plant",p:3,c:5,f:0,cal:27,anchor:"M = 1 cup"},
+ {name:"Green Beans",sizes:1,plant:1,cat:"plant",p:2,c:7,f:0,cal:31,anchor:"M = 1 cup"},
+ {name:"Cauliflower",sizes:1,plant:1,cat:"plant",p:2,c:5,f:0,cal:27,anchor:"M = 1 cup"},
+ {name:"Brussels Sprouts",sizes:1,plant:1,cat:"plant",p:4,c:11,f:0,cal:56,anchor:"M = 1 cup"},
+ {name:"Zucchini",sizes:1,plant:1,cat:"plant",p:2,c:5,f:0,cal:27,anchor:"M = 1 cup"},
+ {name:"Mushrooms",sizes:1,plant:1,cat:"plant",p:3,c:6,f:0,cal:40,anchor:"M = 1 cup cooked"},
+ {name:"Corn",sizes:1,plant:1,cat:"plant",p:3,c:19,f:1,cal:90,anchor:"M = 1 ear"},
+ {name:"Peas",sizes:1,plant:1,cat:"plant",p:8,c:21,f:0,cal:118,anchor:"M = 1 cup"},
+ {name:"Edamame",sizes:1,plant:1,cat:"plant",p:18,c:14,f:8,cal:188,anchor:"M = 1 cup, shelled"},
+ {name:"Beets",sizes:1,plant:1,cat:"plant",p:2,c:13,f:0,cal:58,anchor:"M = 1 cup"},
+ {name:"Onion",sizes:1,plant:1,cat:"plant",p:1,c:5,f:0,cal:22,anchor:"M = half an onion"},
+ {name:"Hummus",sizes:1,plant:1,cat:"plant",p:2,c:6,f:5,cal:70,anchor:"M = 2 tbsp"},
+ // protein
+ {name:"Canned Tuna",unit:"can",fish:1,cat:"pro",p:27,c:0,f:1,cal:120},
+ {name:"Shrimp",sizes:1,fish:1,cat:"pro",p:23,c:1,f:2,cal:110,anchor:"M = palm ≈ 4 oz"},
+ {name:"Sardines",unit:"tin",fish:1,cat:"pro",p:23,c:0,f:11,cal:190},
+ {name:"Smoked Salmon",sizes:1,fish:1,cat:"pro",p:16,c:0,f:4,cal:100,anchor:"M = 3 oz"},
+ {name:"Sushi Roll",sizes:1,fish:1,cat:"pro",p:9,c:50,f:5,cal:300,anchor:"M = 8 pieces"},
+ {name:"Ground Beef (lean)",sizes:1,cat:"pro",p:31,c:0,f:12,cal:240,anchor:"M = palm ≈ 5 oz"},
+ {name:"Ground Turkey",sizes:1,cat:"pro",p:30,c:0,f:10,cal:220,anchor:"M = palm ≈ 5 oz"},
+ {name:"Chicken Thigh",sizes:1,cat:"pro",p:28,c:0,f:13,cal:230,anchor:"M = palm"},
+ {name:"Rotisserie Chicken",sizes:1,cat:"pro",p:30,c:0,f:10,cal:220,anchor:"M = palm"},
+ {name:"Pork Chop",sizes:1,cat:"pro",p:32,c:0,f:10,cal:230,anchor:"M = palm"},
+ {name:"Turkey Slices",sizes:1,cat:"pro",p:18,c:2,f:1,cal:90,anchor:"M = 4 deli slices"},
+ {name:"Cottage Cheese",sizes:1,cat:"pro",p:25,c:8,f:5,cal:180,anchor:"M = 1 cup"},
+ {name:"Skyr",sizes:1,cat:"pro",p:19,c:7,f:0,cal:110,anchor:"M = single-serve cup"},
+ {name:"Tofu",sizes:1,plant:1,cat:"pro",p:15,c:3,f:9,cal:150,anchor:"M = palm"},
+ {name:"Lentils",sizes:1,plant:1,cat:"pro",p:18,c:40,f:1,cal:230,anchor:"M = 1 cup cooked"},
+ {name:"Black Beans",sizes:1,plant:1,cat:"pro",p:15,c:41,f:1,cal:227,anchor:"M = 1 cup"},
+ {name:"Chickpeas",sizes:1,plant:1,cat:"pro",p:15,c:45,f:4,cal:269,anchor:"M = 1 cup"},
+ {name:"Bacon",unit:"slice",cat:"pro",p:3,c:0,f:4,cal:45},
+ {name:"Cheese",unit:"slice",cat:"pro",p:7,c:0,f:9,cal:110},
+ {name:"String Cheese",unit:"stick",cat:"pro",p:7,c:1,f:6,cal:80},
+ {name:"Beef Jerky",sizes:1,cat:"pro",p:9,c:6,f:1,cal:80,anchor:"M = 1 oz"},
+ {name:"Deli Sandwich",sizes:1,cat:"pro",p:25,c:45,f:12,cal:400,anchor:"M = standard sandwich"},
+ {name:"Chili",sizes:1,cat:"pro",p:22,c:25,f:12,cal:300,anchor:"M = bowl"},
+ {name:"Chicken Soup",sizes:1,cat:"pro",p:12,c:14,f:5,cal:160,anchor:"M = bowl"},
+ // carbs
+ {name:"Brown Rice",sizes:1,cat:"carb",p:5,c:45,f:2,cal:216,anchor:"M = fist ≈ 1 cup"},
+ {name:"Quinoa",sizes:1,cat:"carb",p:8,c:39,f:4,cal:222,anchor:"M = fist ≈ 1 cup"},
+ {name:"Pasta",sizes:1,cat:"carb",p:8,c:43,f:1,cal:220,anchor:"M = fist ≈ 1 cup cooked"},
+ {name:"Couscous",sizes:1,cat:"carb",p:6,c:36,f:0,cal:176,anchor:"M = 1 cup cooked"},
+ {name:"Whole Wheat Bread",unit:"slice",cat:"carb",p:4,c:14,f:1,cal:80},
+ {name:"Bagel",unit:"bagel",cat:"carb",p:11,c:56,f:2,cal:280},
+ {name:"Tortilla",unit:"tortilla",cat:"carb",p:4,c:24,f:3,cal:140},
+ {name:"Pita",unit:"pita",cat:"carb",p:5,c:33,f:1,cal:165},
+ {name:"Naan",unit:"naan",cat:"carb",p:9,c:45,f:5,cal:260},
+ {name:"Baked Potato",sizes:1,plant:1,cat:"carb",p:4,c:37,f:0,cal:160,anchor:"M = fist ≈ 1 medium"},
+ {name:"French Fries",sizes:1,cat:"carb",p:4,c:48,f:17,cal:365,anchor:"M = medium serving"},
+ {name:"Granola",sizes:1,cat:"carb",p:5,c:32,f:7,cal:210,anchor:"M = half cup"},
+ {name:"Cereal",sizes:1,cat:"carb",p:3,c:33,f:1,cal:150,anchor:"M = bowl with nothing added"},
+ {name:"Rice Cake",unit:"cake",cat:"carb",p:1,c:7,f:0,cal:35},
+ {name:"Pancake",unit:"pancake",cat:"carb",p:2,c:15,f:2,cal:90},
+ {name:"Ramen / Noodle Bowl",sizes:1,cat:"carb",p:14,c:65,f:18,cal:500,anchor:"M = full bowl"},
+ {name:"Vegetable Soup",sizes:1,plant:1,cat:"carb",p:4,c:18,f:3,cal:120,anchor:"M = bowl"},
+ {name:"Popcorn",sizes:1,cat:"carb",p:3,c:19,f:1,cal:100,anchor:"M = big bowl, air-popped"},
+ // fats
+ {name:"Almond Butter",sizes:1,cat:"fat",p:7,c:7,f:17,cal:190,anchor:"M = 2 tbsp"},
+ {name:"Chia Seeds",sizes:1,cat:"fat",p:2,c:5,f:4,cal:60,anchor:"M = 1 tbsp"},
+ {name:"Ground Flax",sizes:1,cat:"fat",p:2,c:3,f:4,cal:55,anchor:"M = 1 tbsp"},
+ {name:"Pumpkin Seeds",sizes:1,cat:"fat",p:8,c:3,f:13,cal:150,anchor:"M = cupped palm ≈ 1 oz"},
+ {name:"Tahini",sizes:1,cat:"fat",p:3,c:3,f:8,cal:90,anchor:"M = 1 tbsp"},
+ {name:"Olives",sizes:1,plant:1,cat:"fat",p:0,c:1,f:4,cal:40,anchor:"M = 10 olives"},
+ {name:"Guacamole",sizes:1,plant:1,cat:"fat",p:1,c:3,f:5,cal:50,anchor:"M = 2 tbsp"},
+ {name:"Mayo",sizes:1,cat:"fat",p:0,c:0,f:10,cal:90,anchor:"M = 1 tbsp"},
+ {name:"Salad Dressing",sizes:1,cat:"fat",p:0,c:2,f:12,cal:120,anchor:"M = 2 tbsp"},
+ // drinks
+ {name:"Whole Milk",sizes:1,drink:1,cat:"drink",p:8,c:12,f:8,cal:150,anchor:"M = glass ≈ 1 cup"},
+ {name:"Oat Milk",sizes:1,drink:1,cat:"drink",p:3,c:16,f:5,cal:120,anchor:"M = glass ≈ 1 cup"},
+ {name:"Almond Milk",sizes:1,drink:1,cat:"drink",p:1,c:2,f:3,cal:40,anchor:"M = glass ≈ 1 cup"},
+ {name:"Kefir",sizes:1,drink:1,cat:"drink",p:9,c:12,f:2,cal:110,anchor:"M = glass ≈ 1 cup"},
+ {name:"Latte",sizes:1,drink:1,cat:"drink",p:8,c:15,f:6,cal:150,anchor:"M = 12 oz, whole milk"},
+ {name:"Orange Juice",sizes:1,plant:1,drink:1,cat:"drink",p:1,c:26,f:0,cal:110,anchor:"M = glass ≈ 1 cup"},
+ {name:"Kombucha",sizes:1,drink:1,cat:"drink",p:0,c:12,f:0,cal:50,anchor:"M = bottle"},
+ {name:"Soda",unit:"can",drink:1,cat:"drink",p:0,c:39,f:0,cal:140},
+ {name:"Diet Soda",unit:"can",drink:1,cat:"drink",p:0,c:0,f:0,cal:0},
+ {name:"Sports Drink",unit:"bottle",drink:1,cat:"drink",p:0,c:36,f:0,cal:140},
+ {name:"Beer",unit:"bottle",drink:1,cat:"drink",p:1,c:13,f:0,cal:150},
+ {name:"Wine",sizes:1,drink:1,cat:"drink",p:0,c:4,f:0,cal:125,anchor:"M = 5 oz pour"},
+ // treats
+ {name:"Ice Cream",sizes:1,cat:"treat",p:2,c:17,f:7,cal:140,anchor:"M = 1 scoop"},
+ {name:"Cookie",unit:"cookie",cat:"treat",p:2,c:20,f:7,cal:150},
+ {name:"Milk Chocolate",unit:"square",cat:"treat",p:1,c:6,f:3,cal:55},
+ {name:"Croissant",unit:"croissant",cat:"treat",p:5,c:26,f:12,cal:230},
+ {name:"Muffin",unit:"muffin",cat:"treat",p:5,c:50,f:15,cal:350},
+ {name:"Donut",unit:"donut",cat:"treat",p:3,c:30,f:14,cal:250},
+ {name:"Brownie",unit:"brownie",cat:"treat",p:3,c:30,f:10,cal:230},
+ {name:"Cake Slice",unit:"slice",cat:"treat",p:4,c:50,f:14,cal:350},
+ {name:"Candy / Gummies",sizes:1,cat:"treat",p:0,c:33,f:0,cal:140,anchor:"M = small handful"},
+ {name:"Potato Chips",sizes:1,cat:"treat",p:2,c:15,f:10,cal:150,anchor:"M = handful / snack bag"},
+ {name:"Pizza Slice",unit:"slice",cat:"treat",p:12,c:36,f:10,cal:285},
+ {name:"Cheeseburger",unit:"burger",cat:"treat",p:28,c:42,f:28,cal:550},
+ {name:"Burrito",unit:"burrito",cat:"treat",p:28,c:65,f:22,cal:600},
+ {name:"Taco",unit:"taco",cat:"treat",p:10,c:16,f:10,cal:200},
+ {name:"Maple Syrup",sizes:1,cat:"treat",p:0,c:13,f:0,cal:52,anchor:"M = 1 tbsp"},
+ {name:"Jam",sizes:1,cat:"treat",p:0,c:14,f:0,cal:56,anchor:"M = 1 tbsp"},
+ {name:"Granola Bar",unit:"bar",cat:"treat",p:3,c:18,f:4,cal:120}
+];
 const SIZE_MULT={S:0.7,M:1,L:1.4};
 /* Quick-add groups; customs land in "yours". Order = how he eats: protein first. */
 const CATS=[["pro","Protein"],["carb","Carbs"],["plant","Plants"],["fat","Fats & Nuts"],["drink","Drinks"],["treat","Treats"],["yours","Yours"]];
@@ -325,7 +455,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.6.0";
+const VERSION="0.7.0";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -496,7 +626,12 @@ function typicalHour(name){ const hs=[];
   for(let i=0;i<14;i++){ const l=S.log[daysAgo(i)]; if(!l) continue;
     for(const m of l.meals){ if(m.name===name){ const h=entryHour(m); if(h!=null) hs.push(h); } } }
   if(!hs.length) return null; hs.sort((a,b)=>a-b); return hs[Math.floor(hs.length/2)]; }
-function compFind(n){ return COMPONENTS.find(x=>x.name===n)||S.foods.find(x=>x.name===n); }
+/* chipFind = visible quick-add chips only; compFind falls through to the deep
+   library so DB foods resolve everywhere (tray, plates, repeats). Chips win
+   name collisions. */
+function chipFind(n){ return COMPONENTS.find(x=>x.name===n)||S.foods.find(x=>x.name===n); }
+function compFind(n){ return chipFind(n)||FOOD_DB.find(x=>x.name===n); }
+function foodAt(src,i){ return src==="db"?FOOD_DB[i]:[...COMPONENTS,...S.foods][i]; }
 function compEntry(item){ // {name,qty,size} -> logged-entry macros
   const f=compFind(item.name); if(!f) return null;
   const mult=(f.sizes?SIZE_MULT[item.size||"M"]:1)*(item.qty||1);
@@ -1096,6 +1231,7 @@ vFood(){
     <div class="row" style="margin-top:8px;flex-wrap:wrap">
       <button class="chip" onclick="app.water(8)">+8 oz water</button>
       <button class="chip" onclick="app.water(16)">+16 oz</button>
+      <button class="chip" onclick="app.water(-8)">−8</button>
       <span style="flex:1"></span>
       <button class="chip" onclick="app.addPlant(1)">+1 plants</button>
     </div>
@@ -1108,7 +1244,7 @@ vFood(){
         <div class="small faint">${m.time||""}${m.plants?" · "+m.plants+" plants":""}${m.fish?" · fish":""}${m.dcal?" · drink":""}</div>
         ${this.expFood===i?`<div class="small" style="margin-top:4px;color:var(--muted)">Protein <b class="num">${m.p}g</b> · Carbs <b class="num">${m.c||0}g</b> · Fat <b class="num">${m.f||0}g</b> · <b class="num">${m.cal}</b> cal${m.dcal?` · <b class="num">${m.dcal}</b> drunk`:""}</div>`:""}</div>
       <div class="row" style="flex:none"><span class="muted small num">${m.p}p · ${m.cal} cal</span>
-      <button class="chip" onclick="app.delFood(${i})">✕</button></div></div>`).join("")}
+      <button class="chip" onclick="app.editFood(${i})">✎</button></div></div>`).join("")}
   ${(l.supps||[]).length?`<div class="exrow"><div style="min-width:0">
       <div>Supplements <span class="small faint">${l.supps.length} of ${allSupps().length}</span></div>
       <div class="small faint">${l.supps.map(esc).join(" · ")}</div></div>
@@ -1128,8 +1264,9 @@ vFood(){
 
   <div class="spread" style="margin-top:16px"><span class="eyebrow">Quick add</span>
     <span class="small faint">tap it all, then LOG once</span></div>
-  <input id="foodSearch" placeholder="Search foods — choc, nuts, coco…" value="${esc(this.q||"")}"
+  <input id="foodSearch" placeholder="Search 120+ foods — cherries, hummus, taco…" value="${esc(this.q||"")}"
     oninput="app.foodFilter(this.value)" style="margin-top:8px">
+  <div id="dbRes">${this.dbResults((this.q||"").trim().toLowerCase())}</div>
   <div id="qaGroups">
   ${CATS.map(([key,label])=>{
     const items=QUICK.map((f,i)=>({f,i})).filter(x=>(x.f.cat||"yours")===key);
@@ -1170,8 +1307,41 @@ logEntry(e){ e.time=e.time||new Date().toLocaleTimeString([],{hour:"numeric",min
     setTimeout(()=>{ const b=row.getBoundingClientRect();
       if(b.top<0||b.bottom>innerHeight) row.scrollIntoView({block:"center"}); },450); }
   toast(e.name+" — "+e.p+"g protein"); },
-delFood(i){ dayLog(this.foodDate).meals.splice(i,1); this.expFood=null; save(); this.render(); },
+delFood(i){ dayLog(this.foodDate).meals.splice(i,1); this.expFood=null; save(); this.closeSheet(); this.render(); toast("Entry deleted"); },
 expandFood(i){ this.expFood=this.expFood===i?null:i; this.render(); },
+/* v0.7: any entry is adjustable after logging — scale the portion or type
+   exact numbers. Drink cal is its own field (tray entries can be part drink). */
+editFood(i){ const m=dayLog(this.foodDate).meals[i]; if(!m)return;
+  openSheet(`<div class="eyebrow">Adjust entry</div><h2 class="big" style="font-size:24px">${esc(m.name)}</h2>
+   <div class="small faint" style="margin-bottom:8px">Ate more or less than logged? Scale it — or fix any number by hand.</div>
+   <div class="row" style="gap:6px;flex-wrap:wrap">
+     ${[["½ portion",0.5],["¾",0.75],["×1.5",1.5],["×2",2]].map(([l,x])=>`<button class="chip" onclick="app.scaleEdit(${x})">${l}</button>`).join("")}
+   </div>
+   <label class="f">Name</label><input id="eN" value="${esc(m.name)}">
+   <div class="grid2">
+     <div><label class="f">Protein (g)</label><input id="eP" type="number" inputmode="numeric" value="${m.p||0}"></div>
+     <div><label class="f">Calories</label><input id="eCal" type="number" inputmode="numeric" value="${m.cal||0}"></div>
+     <div><label class="f">Carbs (g)</label><input id="eC" type="number" inputmode="numeric" value="${m.c||0}"></div>
+     <div><label class="f">Fat (g)</label><input id="eF" type="number" inputmode="numeric" value="${m.f||0}"></div>
+     <div><label class="f">Drink cal</label><input id="eD" type="number" inputmode="numeric" value="${m.dcal||0}"></div>
+     <div><label class="f">Plants</label><input id="ePl" type="number" inputmode="numeric" value="${m.plants||0}"></div>
+   </div>
+   <div class="grid2" style="margin-top:14px">
+     <button class="btn sm" onclick="app.saveEdit(${i})">SAVE</button>
+     <button class="btn ghost sm" onclick="app.delFood(${i})">DELETE</button>
+   </div>`);
+},
+scaleEdit(x){ ["eP","eC","eF","eCal","eD"].forEach(id=>{const el=document.getElementById(id);
+  if(el) el.value=Math.round((+el.value||0)*x); }); },
+saveEdit(i){ const m=dayLog(this.foodDate).meals[i]; if(!m)return;
+  const g=id=>Math.max(0,+document.getElementById(id).value||0);
+  const name=(document.getElementById("eN").value||"").trim();
+  if(name) m.name=name;
+  m.p=g("eP"); m.c=g("eC"); m.f=g("eF"); m.cal=g("eCal");
+  m.dcal=Math.min(g("eD"),m.cal); m.plants=g("ePl");
+  save(); this.closeSheet(); this.expFood=null;
+  this.flashTs=m.ts||null; if(this.flashTs) setTimeout(()=>{this.flashTs=null;},1600);
+  this.render(); toast("Updated — "+m.p+"g protein · "+m.cal+" cal"); },
 addPlant(d){ const l=dayLog(this.foodDate); l.plantsExtra=Math.max(0,(l.plantsExtra||0)+d);
   save(); this.render(); },
 
@@ -1185,7 +1355,7 @@ recentMeals(){
   for(let i=0;i<10&&out.length<8;i++){ const l=S.log[daysAgo(i)]; if(!l)continue;
     for(const m of [...l.meals].reverse()){
       if(seen.has(m.name)||out.length>=8)continue; seen.add(m.name);
-      if(compFind(m.name))continue; // single quick-adds don't need echo chips
+      if(chipFind(m.name))continue; // visible chips don't need echo; DB foods DO — they echo into Repeat
       out.push({kind:"echo",label:m.name,p:m.p,c:m.c,f:m.f,cal:m.cal,plants:m.plants||0,fish:m.fish||0,dcal:m.dcal||0}); } }
   // two-window eating: surface what he usually eats at THIS hour first
   const hr=new Date().getHours();
@@ -1209,21 +1379,41 @@ quickTap(i){
   else if(f.sizes) this.miniSize(i);
   else this.trayAdd(f.name,null,1);
 },
-miniSize(i){ const f=[...COMPONENTS,...S.foods][i];
+miniSize(i,src){ const f=foodAt(src,i); src=src||"q";
   openSheet(`<div class="eyebrow">How much?</div><h2 class="big" style="font-size:24px">${esc(f.name)}</h2>
    ${f.anchor?`<div class="small faint" style="margin-bottom:10px">${esc(f.anchor)}</div>`:""}
    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
-     ${["S","M","L"].map(s=>`<button class="btn ghost" onclick="app.trayPick(${i},'${s}',1)">
+     ${["S","M","L"].map(s=>`<button class="btn ghost" onclick="app.trayPick(${i},'${s}',1,'${src}')">
        <div style="font-size:22px">${s}</div><div class="small faint">${Math.round(f.p*SIZE_MULT[s])}p · ${Math.round(f.cal*SIZE_MULT[s])} cal</div></button>`).join("")}
    </div>`); },
-miniQty(i){ const f=[...COMPONENTS,...S.foods][i];
-  openSheet(`<div class="eyebrow">How many?</div><h2 class="big" style="font-size:24px">${esc(f.name)}s</h2>
+miniQty(i,src){ const f=foodAt(src,i); src=src||"q";
+  openSheet(`<div class="eyebrow">How many?</div><h2 class="big" style="font-size:24px">${esc(f.name)}</h2>
    <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
-     ${[1,2,3,4].map(n=>`<button class="btn ghost" onclick="app.trayPick(${i},'M',${n})">
+     ${[1,2,3,4].map(n=>`<button class="btn ghost" onclick="app.trayPick(${i},'M',${n},'${src}')">
        <div style="font-size:22px">${n}</div><div class="small faint">${f.p*n}p · ${f.cal*n} cal</div></button>`).join("")}
    </div>`); },
-trayPick(i,size,qty){ const f=[...COMPONENTS,...S.foods][i]; this.closeSheet();
+trayPick(i,size,qty,src){ const f=foodAt(src,i); this.closeSheet();
   if(f) this.trayAdd(f.name,size,qty); },
+/* deep-library results: same tap behavior as chips, resolved from FOOD_DB */
+dbTap(j){ const f=FOOD_DB[j]; if(!f)return;
+  if(f.unit) this.miniQty(j,"db");
+  else if(f.sizes) this.miniSize(j,"db");
+  else this.trayAdd(f.name,null,1); },
+dbResults(q){
+  if(!q||q.length<2) return "";
+  const chipNames=new Set([...COMPONENTS,...S.foods].map(f=>f.name.toLowerCase()));
+  const hits=FOOD_DB.map((f,j)=>({f,j}))
+    .filter(x=>x.f.name.toLowerCase().includes(q)&&!chipNames.has(x.f.name.toLowerCase())).slice(0,14);
+  if(!hits.length){ // suppress the miss note if one of his own chips matches
+    const chipHit=[...COMPONENTS,...S.foods].some(f=>f.name.toLowerCase().includes(q));
+    return chipHit?"":`<div class="small faint" style="margin-top:10px">Not in the library —
+    <button class="chip on" style="margin-left:4px" onclick="app.customFood()">+ add it with exact macros</button></div>`; }
+  return `<div class="small faint" style="margin-top:12px;letter-spacing:.14em;text-transform:uppercase;font-size:11px">Food library</div>
+   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px">
+     ${hits.map(({f,j})=>{const n=(this.tray[f.name]||{}).qty||0;
+       return `<button class="chip ${n?"on":""}" onclick="app.dbTap(${j})">${esc(f.name)}${n?" ×"+n:""} <span class="faint">${f.p}p · ${f.cal}</span></button>`;}).join("")}
+   </div>`;
+},
 trayAdd(name,size,qty){ const it=this.tray[name]||(this.tray[name]={qty:0,size:"M"});
   it.qty+=qty||1; if(size)it.size=size; this.render(); },
 trayItems(){ return Object.entries(this.tray).filter(([,it])=>it.qty>0)
@@ -1263,6 +1453,7 @@ foodFilter(q){ this.q=q; q=q.trim().toLowerCase();
   document.querySelectorAll("#qaGroups .qagrp").forEach(g=>{
     const any=[...g.querySelectorAll(".qachip")].some(el=>el.style.display!=="none");
     g.style.display=any?"":"none";});
+  const box=document.getElementById("dbRes"); if(box) box.innerHTML=this.dbResults(q);
 },
 
 /* ---------- plate builder ---------- */
@@ -1323,8 +1514,9 @@ addSupp(){ const n=(prompt("Supplement name:")||"").trim(); if(!n)return;
   if(allSupps().some(s=>s.toLowerCase()===n.toLowerCase())){toast(n+" is already a chip");return;}
   S.suppsCustom.push(n); save(); this.render(); toast(n+" added — tap it to log"); },
 customFood(){
+  const pre=(this.q||"").trim(); // searched something we don't have? prefill it
   openSheet(`<div class="eyebrow">Custom entry</div><h2 class="big" style="font-size:24px">Log food</h2>
-   <label class="f">Name</label><input id="fN" placeholder="e.g. Steak 8 oz">
+   <label class="f">Name</label><input id="fN" placeholder="e.g. Steak 8 oz" value="${esc(pre?pre[0].toUpperCase()+pre.slice(1):"")}">
    <div class="grid2">
      <div><label class="f">Protein (g)</label><input id="fP" type="number" inputmode="numeric" value="0"></div>
      <div><label class="f">Calories</label><input id="fCal" type="number" inputmode="numeric" value="0"></div>
@@ -1507,6 +1699,8 @@ guide(){
     "All of it is ankle-safe and never overhead-heavy by design.")+
    G("Fuel",
     "<b>QUICK ADD</b> is a tray: tap everything you just ate (search box finds it fast — 'choc', 'coco'), it stacks up ON DECK, then one LOG commits it all as a single meal. It echoes into the Repeat row, so tomorrow the same snack is one tap. Leaving the tab logs whatever's on deck automatically — nothing gets lost.<br><br>"+
+    "<b>The search now reaches a 120-food library</b> beyond your chips — cherries, hummus, tacos, lattes — each with real macros, plant/fish/drink flags included. Type 2+ letters and library matches appear; anything you log from it becomes a Repeat chip. Still missing? The search hands you a prefilled + custom form.<br><br>"+
+    "<b>Logged it wrong?</b> Tap ✎ on any entry in Today's log — scale the portion (½, ×1.5…), fix any macro or the drink calories, rename, or delete. Nothing is locked once logged.<br><br>"+
     "<b>BUILD A PLATE</b> for homemade meals: tap + on each component, name it, LOG + SAVE ★ — from then on it's one tap in the Repeat row.<br><br>"+
     "<b>Portions without a scale:</b> S/M/L anchor to your hand — fist of rice ≈ 1 cup, palm of fish ≈ 7 oz, cupped palm of nuts. "+
     "On weigh days use <b>+ custom</b> for exact numbers. Consistency beats precision.<br>"+

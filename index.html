@@ -325,7 +325,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.5.3";
+const VERSION="0.5.4";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -364,6 +364,8 @@ function isTrainDay(dow){ return (S.profile.trainDays||[2,3,4]).includes(dow); }
    every save() writes localStorage AND IndexedDB; boot adopts whichever is
    newer; save failure raises the red banner instead of dying silently. */
 let idb=null, saveOk=true, storePersisted=null;
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+const STANDALONE=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
 function showStoreWarn(msg){ const el=document.getElementById("storewarn");
   el.textContent=msg; el.style.display="block"; }
 function save(){
@@ -771,12 +773,16 @@ vHome(){
   </div>
   <div class="small faint" style="margin-top:10px;text-align:center">${
     saveOk?`✓ saved · ${Object.keys(S.log).length} days · ${S.workouts.length} workouts on record`+
-      (storePersisted===true?" · storage protected":storePersisted===false?" · storage not guaranteed — export weekly":"")
+      (IOS?(STANDALONE?" · home-screen app ✓":" · Safari tab — log in the home-screen icon"):"")+
+      (storePersisted===true?" · storage protected":storePersisted===false?" · weekly export = insurance":"")
     :"✗ STORAGE FAILING — export now"}</div>`;
 },
 toggleMind(i){ const s=MIND[i]; if(!s)return;
   const l=dayLog(this.tab==="food"?this.foodDate:today()); l.mind=l.mind||[];
-  const j=l.mind.indexOf(s); if(j<0)l.mind.push(s); else l.mind.splice(j,1); save(); this.render(); },
+  const j=l.mind.indexOf(s);
+  if(j<0){ l.mind.push(s); toast(s+" ✓ — mind rep logged"); }
+  else { l.mind.splice(j,1); toast(s+" removed"); }
+  save(); this.render(); },
 
 /* ---------- TRAIN ---------- */
 vTrain(){
@@ -1078,7 +1084,11 @@ vFood(){
       <div>Supplements <span class="small faint">${l.supps.length} of ${allSupps().length}</span></div>
       <div class="small faint">${l.supps.map(esc).join(" · ")}</div></div>
       <span class="num muted" style="flex:none;color:var(--good)">✓</span></div>`:""}
-  ${l.meals.length||(l.supps||[]).length?"":`<div class="small faint" style="margin-top:8px">Nothing logged${isToday?" yet — everything you add lands right here":""}.</div>`}
+  ${(l.mind||[]).length?`<div class="exrow"><div style="min-width:0">
+      <div>Mind reps</div>
+      <div class="small faint">${l.mind.map(esc).join(" · ")}</div></div>
+      <span class="num muted" style="flex:none;color:var(--good)">✓</span></div>`:""}
+  ${l.meals.length||(l.supps||[]).length||(l.mind||[]).length?"":`<div class="small faint" style="margin-top:8px">Nothing logged${isToday?" yet — everything you add lands right here":""}.</div>`}
 
   ${this._recent.length?`<div class="eyebrow" style="margin-top:14px">Repeat — one tap</div>
   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:7px">
@@ -1589,4 +1599,16 @@ load();
 app.render();
 if(S.active) app.tab="train", app.render();
 bootStorage();
+// second shot at protected storage: browsers grant persist() more readily
+// after a real user gesture than at boot. Render is deferred so the tap
+// that triggered this still lands on its button.
+window.addEventListener("pointerdown",function once(){
+  window.removeEventListener("pointerdown",once);
+  if(!(navigator.storage&&navigator.storage.persist)) return;
+  navigator.storage.persist().then(async g=>{
+    const before=storePersisted;
+    try{ storePersisted=g||await navigator.storage.persisted(); }catch(e){}
+    if(storePersisted!==before) setTimeout(()=>app.render(),600);
+  }).catch(()=>{});
+});
 </script>

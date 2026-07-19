@@ -325,7 +325,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.5.4";
+const VERSION="0.6.0";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -465,6 +465,37 @@ function totals(date){ const l=S.log[date||today()]||{meals:[]};
   t.plants+=(l.plantsExtra||0); return t; }
 function fishWeek(){ let n=0; for(let i=0;i<7;i++){ const l=S.log[daysAgo(i)];
   if(l) for(const m of l.meals) if(m.fish) n++; } return n; }
+/* Day grade: quality-first scoring on HIS standards. Calories are a budget
+   line, not the headline — what varies for Jeremy is protein, plants,
+   water, liquid cals, the stack, and fish pace. */
+function dayGrade(date){
+  const d=date||today(); const t=totals(d); const l=S.log[d]||{}; const P=S.profile;
+  const supN=(l.supps||[]).length, fw=fishWeek(), water=l.water||0;
+  const checks=[
+    {k:"Protein",w:35,frac:Math.min(1,t.p/P.proteinFloor),ok:t.p>=P.proteinFloor,detail:t.p+"/"+P.proteinFloor+"g"},
+    {k:"Plants",w:20,frac:Math.min(1,t.plants/P.plantTarget),ok:t.plants>=P.plantTarget,detail:t.plants+"/"+P.plantTarget},
+    {k:"Water",w:15,frac:Math.min(1,water/P.waterTarget),ok:water>=P.waterTarget,detail:water+"/"+P.waterTarget+" oz"},
+    {k:"Drinks",w:10,frac:t.dcal<=400?1:Math.max(0,1-(t.dcal-400)/400),ok:t.dcal<=400,detail:t.dcal+" cal"},
+    {k:"Stack",w:10,frac:Math.min(1,supN/4),ok:supN>=4,detail:supN+" supps"},
+    {k:"Fish",w:10,frac:Math.min(1,fw/2),ok:fw>=2,detail:"×"+fw+"/wk"}
+  ];
+  const pct=Math.round(checks.reduce((a,c)=>a+c.w*c.frac,0));
+  const letter=pct>=90?"A":pct>=75?"B":pct>=55?"C":"·";
+  let next="clean sweep ✓";
+  if(t.p<P.proteinFloor) next=(P.proteinFloor-t.p)+"g protein to the zone";
+  else{ const miss=checks.find(c=>!c.ok);
+    if(miss) next={Plants:(P.plantTarget-t.plants)+" plants to go",Water:(P.waterTarget-water)+" oz water to go",
+      Drinks:"drinks over 400 cal",Stack:(4-supN)+" more supps",Fish:"fish "+(2-fw)+"× more this week"}[miss.k]; }
+  return {pct,letter,checks,next};
+}
+/* time-of-day smarts: when does he usually eat this? median hour, last 14d */
+function entryHour(m){ if(m.ts) return new Date(m.ts).getHours();
+  const x=/(\d+):\d+\s*(AM|PM)/i.exec(m.time||""); if(!x) return null;
+  let h=+x[1]%12; if(/pm/i.test(x[2])) h+=12; return h; }
+function typicalHour(name){ const hs=[];
+  for(let i=0;i<14;i++){ const l=S.log[daysAgo(i)]; if(!l) continue;
+    for(const m of l.meals){ if(m.name===name){ const h=entryHour(m); if(h!=null) hs.push(h); } } }
+  if(!hs.length) return null; hs.sort((a,b)=>a-b); return hs[Math.floor(hs.length/2)]; }
 function compFind(n){ return COMPONENTS.find(x=>x.name===n)||S.foods.find(x=>x.name===n); }
 function compEntry(item){ // {name,qty,size} -> logged-entry macros
   const f=compFind(item.name); if(!f) return null;
@@ -669,7 +700,7 @@ render(){
 
 /* ---------- HOME ---------- */
 vHome(){
-  const P=S.profile,t=totals(),rec=recToday(),m=suggestMission();
+  const P=S.profile,t=totals(),rec=recToday(),m=suggestMission(),g=dayGrade();
   const hr=new Date().getHours();
   const greet=hr<11?"Good morning":hr<17?"Good afternoon":"Good evening";
   const lastW=[...S.body].reverse().find(b=>b.weight);
@@ -740,9 +771,9 @@ vHome(){
       <div class="bar"><i class="${t.p>=P.proteinFloor?"over":""}" style="width:${Math.min(100,t.p/P.proteinFloor*100)}%"></i></div>
     </div>
     <div class="card" onclick="app.nav('food')">
-      <div class="eyebrow">Calories</div>
-      <div class="num" style="font-size:26px;margin-top:4px">${t.cal}<span class="muted" style="font-size:15px">/${P.calTarget}</span></div>
-      <div class="bar"><i style="width:${Math.min(100,t.cal/P.calTarget*100)}%"></i></div>
+      <div class="eyebrow">Day grade</div>
+      <div class="num" style="font-size:26px;margin-top:4px;color:${g.pct>=90?"var(--good)":g.pct>=75?"var(--ember)":"inherit"}">${g.letter}<span class="muted" style="font-size:15px"> · ${g.pct}</span></div>
+      <div class="small faint">${g.next}</div>
     </div>
     <div class="card" onclick="app.logBody()">
       <div class="eyebrow">Weight · Waist</div>
@@ -1052,32 +1083,30 @@ vFood(){
     <div class="eyebrow">${isToday?"Today":fmtDate(d)}</div>
     <button class="chip" onclick="app.foodNav(1)" ${isToday?"style='visibility:hidden'":""}>›</button></div>
   <h2 class="big">Fuel</h2>
-  <div class="card">
-    <div class="spread"><span class="eyebrow">Protein zone</span><span class="num">${t.p} / ${P.proteinFloor}–${P.proteinTarget} g</span></div>
+  ${(()=>{const g=dayGrade(d);
+  return `<div class="card">
+    <div class="spread"><span class="eyebrow">Today's fuel — your standards</span>
+      <span class="num" style="font-size:24px;color:${g.pct>=90?"var(--good)":g.pct>=75?"var(--ember)":"var(--muted)"}">${g.letter}<span class="muted" style="font-size:13px"> · ${g.pct}</span></span></div>
+    <div class="spread" style="margin-top:8px"><span class="eyebrow">Protein zone</span><span class="num">${t.p} / ${P.proteinFloor}–${P.proteinTarget} g</span></div>
     <div class="bar"><i class="${t.p>=P.proteinFloor?"over":""}" style="width:${Math.min(100,t.p/P.proteinFloor*100)}%"></i></div>
-    <div class="spread" style="margin-top:12px"><span class="eyebrow">Calories</span><span class="num">${t.cal} / ${P.calTarget}</span></div>
-    <div class="bar"><i style="width:${Math.min(100,t.cal/P.calTarget*100)}%"></i></div>
-    <div class="row small muted" style="margin-top:10px;gap:16px">
-      <span>C <b class="num">${t.c}g</b></span><span>F <b class="num">${t.f}g</b></span>
-      <span style="flex:1"></span>
-      <span style="color:${t.plants>=P.plantTarget?"var(--good)":"inherit"}">Plants <b class="num">${t.plants}</b>/${P.plantTarget}</span>
-      <span>Fish/wk <b class="num">${fishWeek()}</b></span>
+    <div class="grid2" style="margin-top:10px;gap:4px 14px">
+      ${g.checks.filter(c=>c.k!=="Protein").map(c=>`<div class="small" style="color:${c.ok?"var(--good)":"var(--muted)"}">${c.ok?"✓":"·"} ${c.k} <b class="num">${c.detail}</b></div>`).join("")}
     </div>
-    <div class="small" style="margin-top:6px;color:${t.dcal>400?"var(--warn)":"var(--faint)"}">Drank <b class="num">${t.dcal}</b> cal${t.dcal>400?" — liquid calories don't fill you up; that's the stomach's territory":""}</div>
+    <div class="small faint" style="margin-top:9px">Budget ~${P.calTarget} cal · <b class="num">${t.cal}</b> logged · C <b class="num">${t.c}</b>g · F <b class="num">${t.f}</b>g</div>
     <div class="row" style="margin-top:8px;flex-wrap:wrap">
       <button class="chip" onclick="app.water(8)">+8 oz water</button>
       <button class="chip" onclick="app.water(16)">+16 oz</button>
-      <span class="small faint">${l.water||0}/${P.waterTarget} oz</span>
       <span style="flex:1"></span>
       <button class="chip" onclick="app.addPlant(1)">+1 plants</button>
     </div>
-  </div>
+  </div>`;})()}
 
   <div class="spread" style="margin-top:14px"><span class="eyebrow">Today's log</span>
     ${l.meals.length?`<span class="small faint">${l.meals.length} ${l.meals.length===1?"entry":"entries"}</span>`:""}</div>
   ${l.meals.map((m,i)=>`<div class="exrow ${m.ts&&m.ts===this.flashTs?"flash":""}">
-      <div style="min-width:0"><div>${esc(m.name)}</div>
-        <div class="small faint">${m.time||""}${m.plants?" · "+m.plants+" plants":""}${m.fish?" · fish":""}${m.dcal?" · drink":""}</div></div>
+      <div style="min-width:0;flex:1" onclick="app.expandFood(${i})"><div>${esc(m.name)}</div>
+        <div class="small faint">${m.time||""}${m.plants?" · "+m.plants+" plants":""}${m.fish?" · fish":""}${m.dcal?" · drink":""}</div>
+        ${this.expFood===i?`<div class="small" style="margin-top:4px;color:var(--muted)">Protein <b class="num">${m.p}g</b> · Carbs <b class="num">${m.c||0}g</b> · Fat <b class="num">${m.f||0}g</b> · <b class="num">${m.cal}</b> cal${m.dcal?` · <b class="num">${m.dcal}</b> drunk`:""}</div>`:""}</div>
       <div class="row" style="flex:none"><span class="muted small num">${m.p}p · ${m.cal} cal</span>
       <button class="chip" onclick="app.delFood(${i})">✕</button></div></div>`).join("")}
   ${(l.supps||[]).length?`<div class="exrow"><div style="min-width:0">
@@ -1141,7 +1170,8 @@ logEntry(e){ e.time=e.time||new Date().toLocaleTimeString([],{hour:"numeric",min
     setTimeout(()=>{ const b=row.getBoundingClientRect();
       if(b.top<0||b.bottom>innerHeight) row.scrollIntoView({block:"center"}); },450); }
   toast(e.name+" — "+e.p+"g protein"); },
-delFood(i){ dayLog(this.foodDate).meals.splice(i,1); save(); this.render(); },
+delFood(i){ dayLog(this.foodDate).meals.splice(i,1); this.expFood=null; save(); this.render(); },
+expandFood(i){ this.expFood=this.expFood===i?null:i; this.render(); },
 addPlant(d){ const l=dayLog(this.foodDate); l.plantsExtra=Math.max(0,(l.plantsExtra||0)+d);
   save(); this.render(); },
 
@@ -1157,6 +1187,11 @@ recentMeals(){
       if(seen.has(m.name)||out.length>=8)continue; seen.add(m.name);
       if(compFind(m.name))continue; // single quick-adds don't need echo chips
       out.push({kind:"echo",label:m.name,p:m.p,c:m.c,f:m.f,cal:m.cal,plants:m.plants||0,fish:m.fish||0,dcal:m.dcal||0}); } }
+  // two-window eating: surface what he usually eats at THIS hour first
+  const hr=new Date().getHours();
+  const dist=r=>{ const th=typicalHour(r.label); if(th==null) return 6;
+    const dd=Math.abs(th-hr); return Math.min(dd,24-dd); };
+  out.sort((a,b)=>dist(a)-dist(b));
   return out;
 },
 logRecent(i){ const r=this._recent[i]; if(!r)return;
@@ -1179,13 +1214,13 @@ miniSize(i){ const f=[...COMPONENTS,...S.foods][i];
    ${f.anchor?`<div class="small faint" style="margin-bottom:10px">${esc(f.anchor)}</div>`:""}
    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
      ${["S","M","L"].map(s=>`<button class="btn ghost" onclick="app.trayPick(${i},'${s}',1)">
-       <div style="font-size:22px">${s}</div><div class="small faint">${Math.round(f.cal*SIZE_MULT[s])} cal</div></button>`).join("")}
+       <div style="font-size:22px">${s}</div><div class="small faint">${Math.round(f.p*SIZE_MULT[s])}p · ${Math.round(f.cal*SIZE_MULT[s])} cal</div></button>`).join("")}
    </div>`); },
 miniQty(i){ const f=[...COMPONENTS,...S.foods][i];
   openSheet(`<div class="eyebrow">How many?</div><h2 class="big" style="font-size:24px">${esc(f.name)}s</h2>
    <div class="grid2" style="grid-template-columns:repeat(4,1fr)">
      ${[1,2,3,4].map(n=>`<button class="btn ghost" onclick="app.trayPick(${i},'M',${n})">
-       <div style="font-size:22px">${n}</div><div class="small faint">${f.cal*n} cal</div></button>`).join("")}
+       <div style="font-size:22px">${n}</div><div class="small faint">${f.p*n}p · ${f.cal*n} cal</div></button>`).join("")}
    </div>`); },
 trayPick(i,size,qty){ const f=[...COMPONENTS,...S.foods][i]; this.closeSheet();
   if(f) this.trayAdd(f.name,size,qty); },
@@ -1475,6 +1510,7 @@ guide(){
     "<b>BUILD A PLATE</b> for homemade meals: tap + on each component, name it, LOG + SAVE ★ — from then on it's one tap in the Repeat row.<br><br>"+
     "<b>Portions without a scale:</b> S/M/L anchor to your hand — fist of rice ≈ 1 cup, palm of fish ≈ 7 oz, cupped palm of nuts. "+
     "On weigh days use <b>+ custom</b> for exact numbers. Consistency beats precision.<br>"+
+    "<b>The day grade (A/B/C)</b> scores your day on YOUR standards — protein zone, plants, water, drinks under 400 cal, the stack, fish pace. Calories are just the budget line at the bottom; your food quality is already the point.<br>"+
     "<b>Targets:</b> protein zone "+S.profile.proteinFloor+"–"+S.profile.proteinTarget+"g (anywhere in it is a green day), ~"+S.profile.calTarget+" cal, "+S.profile.plantTarget+" plant servings, fish 2×/week, water through the day.")+
    G("Recovery score",
     "90–100 push progression · 70–89 train normal · under 70 volume drops, intensity stays. "+

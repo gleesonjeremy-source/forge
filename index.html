@@ -455,7 +455,7 @@ function preGym(){
 
 /* ---------- state ---------- */
 const KEY="forge.v1";
-const VERSION="0.7.0";
+const VERSION="0.7.1";
 let S;
 function fresh(){return {
   profile:{name:"Jeremy",proteinFloor:160,proteinTarget:185,calTarget:2700,waterTarget:96,plantTarget:4,goalLow:170,goalHigh:180,restSec:90,trainHour:15,trainDays:[2,3,4]},
@@ -1234,6 +1234,7 @@ vFood(){
       <button class="chip" onclick="app.water(-8)">−8</button>
       <span style="flex:1"></span>
       <button class="chip" onclick="app.addPlant(1)">+1 plants</button>
+      <button class="chip" onclick="app.addPlant(-1)">−1</button>
     </div>
   </div>`;})()}
 
@@ -1342,7 +1343,10 @@ saveEdit(i){ const m=dayLog(this.foodDate).meals[i]; if(!m)return;
   save(); this.closeSheet(); this.expFood=null;
   this.flashTs=m.ts||null; if(this.flashTs) setTimeout(()=>{this.flashTs=null;},1600);
   this.render(); toast("Updated — "+m.p+"g protein · "+m.cal+" cal"); },
-addPlant(d){ const l=dayLog(this.foodDate); l.plantsExtra=Math.max(0,(l.plantsExtra||0)+d);
+addPlant(d){ const l=dayLog(this.foodDate);
+  if(d<0&&!(l.plantsExtra||0)){ // nothing manual to remove — the plants came from logged foods
+    toast(l.meals.some(m=>m.plants)?"That plant is on a food entry — tap ✎ on it":"No manual plants to remove"); return; }
+  l.plantsExtra=Math.max(0,(l.plantsExtra||0)+d);
   save(); this.render(); },
 
 /* recent + saved meals: saved plates first, then unique recent entries */
